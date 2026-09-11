@@ -1,0 +1,378 @@
+@page "/validation-test"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.QuickGrid
+
+<PageTitle>QuickGrid Row Click Validation</PageTitle>
+
+<div class="validation-page">
+    <section class="hero-panel">
+        <div>
+            <p class="eyebrow">ASP.NET Core Issue #69130</p>
+            <h1>QuickGrid row click validation</h1>
+            <p class="hero-copy">
+                Use this page to verify row click handling, nested control propagation, async callback ordering,
+                and selection state updates against a 20-item in-memory data set.
+            </p>
+        </div>
+
+        <div class="hero-stats">
+            <div class="stat-chip">
+                <span>Row callbacks</span>
+                <strong>@RowCallbackCount</strong>
+            </div>
+            <div class="stat-chip">
+                <span>Button callbacks</span>
+                <strong>@ButtonCallbackCount</strong>
+            </div>
+            <div class="stat-chip">
+                <span>Checkbox callbacks</span>
+                <strong>@CheckboxCallbackCount</strong>
+            </div>
+        </div>
+    </section>
+
+    <div class="validation-layout">
+        <div class="validation-main">
+            <section class="sample-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Grid 1 - Interactive QuickGrid</h2>
+                        <p>
+                            Click the cell content, padding, or row edges. Use the helper buttons to queue rapid
+                            clicks without waiting for the async callback to finish.
+                        </p>
+                    </div>
+                    <div class="panel-header-note">
+                        Built-in row-click styling stays active because <code>OnRowClick</code> is wired.
+                    </div>
+                </div>
+
+                <div class="rapid-actions">
+                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="RunSameRowTwiceAsync">
+                        Click row 10 twice quickly
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="RunRowAThenRowBAsync">
+                        Click row 1 then row 10
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="RunMultipleRapidRowsAsync">
+                        Click rows 1, 10, and 20 rapidly
+                    </button>
+                </div>
+
+                <QuickGrid TGridItem="ProductItem"
+                           Items="ProductRows"
+                           ItemKey="item => item.Id"
+                           Class="table validation-grid clickable-grid"
+                           RowClass="GetInteractiveRowClass"
+                           OnRowClick="HandleRowClickAsync">
+                    <PropertyColumn Property="item => item.Id" Title="Id" Sortable="true" />
+                    <PropertyColumn Property="item => item.Name" Title="Name" Sortable="true" />
+                    <PropertyColumn Property="item => item.Category" Title="Category" Sortable="true" />
+                    <PropertyColumn Property="item => item.Price" Title="Price" Format="C2" Sortable="true" />
+                    <PropertyColumn Property="item => item.IsSelected" Title="Selected" />
+                    <TemplateColumn Title="Actions" Context="item">
+                        <div class="row-controls">
+                            <button type="button"
+                                    class="btn btn-sm btn-primary"
+                                    @onclick="() => HandleActionButtonClickAsync(item)">
+                                Action
+                            </button>
+                            <label class="checkbox-control">
+                                <input type="checkbox"
+                                       checked="@item.IsSelected"
+                                       @onclick="() => MarkPendingSource(InteractionSource.Checkbox)"
+                                       @onchange="args => HandleCheckboxChangedAsync(item, args)" />
+                                <span>Checkbox</span>
+                            </label>
+                        </div>
+                    </TemplateColumn>
+                </QuickGrid>
+            </section>
+
+            <section class="sample-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Grid 2 - Comparison Grid</h2>
+                        <p>
+                            Uses the same data source but has no <code>OnRowClick</code> handler or clickable row styling.
+                        </p>
+                    </div>
+                </div>
+
+                <QuickGrid TGridItem="ProductItem"
+                           Items="ProductRows"
+                           ItemKey="item => item.Id"
+                           Class="table validation-grid comparison-grid"
+                           RowClass="GetComparisonRowClass">
+                    <PropertyColumn Property="item => item.Id" Title="Id" Sortable="true" />
+                    <PropertyColumn Property="item => item.Name" Title="Name" Sortable="true" />
+                    <PropertyColumn Property="item => item.Category" Title="Category" Sortable="true" />
+                    <PropertyColumn Property="item => item.Price" Title="Price" Format="C2" Sortable="true" />
+                    <PropertyColumn Property="item => item.IsSelected" Title="Selected" />
+                    <TemplateColumn Title="Actions" Context="item">
+                        <div class="row-controls muted-controls">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => HandleComparisonButtonClickAsync(item)">
+                                Action
+                            </button>
+                            <label class="checkbox-control">
+                                <input type="checkbox"
+                                       checked="@item.IsSelected"
+                                       @onchange="args => HandleComparisonCheckboxChangedAsync(item, args)" />
+                                <span>Checkbox</span>
+                            </label>
+                        </div>
+                    </TemplateColumn>
+                </QuickGrid>
+            </section>
+        </div>
+
+        <aside class="validation-sidebar">
+            <section class="sample-panel sticky-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Selection details</h2>
+                        <p>Tracks the currently selected row and the time it completed selection.</p>
+                    </div>
+                </div>
+
+                @if (SelectedItem is null)
+                {
+                    <div class="empty-state">No row selected yet.</div>
+                }
+                else
+                {
+                    <dl class="details-grid">
+                        <dt>Selected Item ID</dt>
+                        <dd>@SelectedItem.Id</dd>
+                        <dt>Selected Item Name</dt>
+                        <dd>@SelectedItem.Name</dd>
+                        <dt>Selected Item Category</dt>
+                        <dd>@SelectedItem.Category</dd>
+                        <dt>Selected Item Price</dt>
+                        <dd>@SelectedItem.Price.ToString("C2")</dd>
+                        <dt>Last Selected Timestamp</dt>
+                        <dd>@LastSelectedTimestamp?.ToString("HH:mm:ss.fff")</dd>
+                    </dl>
+                }
+
+                <div class="propagation-summary">
+                    <h3>Propagation status</h3>
+                    <p>@LastPropagationStatus</p>
+                </div>
+            </section>
+
+            <section class="sample-panel sticky-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Callback log</h2>
+                        <p>Newest entries appear first.</p>
+                    </div>
+                </div>
+
+                <ul class="callback-log">
+                    @foreach (var entry in CallbackLog.OrderByDescending(entry => entry.Timestamp).Take(50))
+                    {
+                        <li>
+                            <span class="log-time">@entry.Timestamp.ToString("HH:mm:ss.fff")</span>
+                            <span class="log-message">@entry.Message</span>
+                        </li>
+                    }
+                </ul>
+            </section>
+
+            <section class="sample-panel sticky-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Validation checklist</h2>
+                        <p>Use these items to exercise the matrix from the UI.</p>
+                    </div>
+                </div>
+
+                <ul class="checklist">
+                    <li>Row 1, row 10, and row 20 are present in the data set.</li>
+                    <li>Click content, padding, and row edges in Grid 1.</li>
+                    <li>Click the Action button and Checkbox and observe row propagation.</li>
+                    <li>Use the rapid click helper buttons to validate overlap and completion order.</li>
+                    <li>Compare hover and cursor styling between the two grids.</li>
+                </ul>
+            </section>
+        </aside>
+    </div>
+</div>
+
+@code {
+    private readonly List<ProductItem> products = CreateProducts();
+    private readonly List<CallbackEntry> CallbackLog = new();
+    private ProductItem? SelectedItem;
+    private DateTime? LastSelectedTimestamp;
+    private string LastPropagationStatus = "No control propagation recorded yet.";
+    private int RowCallbackCount;
+    private int ButtonCallbackCount;
+    private int CheckboxCallbackCount;
+    private InteractionSource? PendingSource;
+
+    private IQueryable<ProductItem> ProductRows => products.AsQueryable();
+
+    private static List<ProductItem> CreateProducts() =>
+    [
+        new ProductItem { Id = 1, Name = "Product 1", Category = "Office", Price = 12.50m },
+        new ProductItem { Id = 2, Name = "Product 2", Category = "Office", Price = 18.75m },
+        new ProductItem { Id = 3, Name = "Product 3", Category = "Office", Price = 23.10m },
+        new ProductItem { Id = 4, Name = "Product 4", Category = "Home", Price = 9.99m },
+        new ProductItem { Id = 5, Name = "Product 5", Category = "Home", Price = 14.95m },
+        new ProductItem { Id = 6, Name = "Product 6", Category = "Home", Price = 29.00m },
+        new ProductItem { Id = 7, Name = "Product 7", Category = "Garden", Price = 15.25m },
+        new ProductItem { Id = 8, Name = "Product 8", Category = "Garden", Price = 19.80m },
+        new ProductItem { Id = 9, Name = "Product 9", Category = "Garden", Price = 42.40m },
+        new ProductItem { Id = 10, Name = "Product 10", Category = "Electronics", Price = 59.99m },
+        new ProductItem { Id = 11, Name = "Product 11", Category = "Electronics", Price = 64.25m },
+        new ProductItem { Id = 12, Name = "Product 12", Category = "Electronics", Price = 75.00m },
+        new ProductItem { Id = 13, Name = "Product 13", Category = "Outdoors", Price = 81.45m },
+        new ProductItem { Id = 14, Name = "Product 14", Category = "Outdoors", Price = 91.30m },
+        new ProductItem { Id = 15, Name = "Product 15", Category = "Outdoors", Price = 104.99m },
+        new ProductItem { Id = 16, Name = "Product 16", Category = "Kitchen", Price = 22.35m },
+        new ProductItem { Id = 17, Name = "Product 17", Category = "Kitchen", Price = 34.10m },
+        new ProductItem { Id = 18, Name = "Product 18", Category = "Kitchen", Price = 48.60m },
+        new ProductItem { Id = 19, Name = "Product 19", Category = "Sports", Price = 72.95m },
+        new ProductItem { Id = 20, Name = "Product 20", Category = "Sports", Price = 88.40m }
+    ];
+
+    private string? GetInteractiveRowClass(ProductItem item) => item.IsSelected ? "selected-row" : null;
+
+    private string? GetComparisonRowClass(ProductItem item) => item.IsSelected ? "selected-row" : null;
+
+    private async Task HandleRowClickAsync(ProductItem item)
+    {
+        var source = PendingSource ?? InteractionSource.Row;
+        PendingSource = null;
+
+        await ExecuteRowClickAsync(item, source);
+    }
+
+    private void MarkPendingSource(InteractionSource source)
+    {
+        PendingSource = source;
+    }
+
+    private Task HandleActionButtonClickAsync(ProductItem item)
+    {
+        ButtonCallbackCount++;
+        MarkPendingSource(InteractionSource.Button);
+        Log(item, "ButtonClicked", "Button click received");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleComparisonButtonClickAsync(ProductItem item)
+    {
+        ButtonCallbackCount++;
+        Log(item, "ButtonClicked", "Comparison grid action button received");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleComparisonCheckboxChangedAsync(ProductItem item, ChangeEventArgs args)
+    {
+        CheckboxCallbackCount++;
+
+        var state = args.Value is bool isChecked && isChecked ? "checked" : "unchecked";
+        Log(item, "CheckboxChanged", $"Comparison grid checkbox changed - {state}");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCheckboxChangedAsync(ProductItem item, ChangeEventArgs args)
+    {
+        CheckboxCallbackCount++;
+        MarkPendingSource(InteractionSource.Checkbox);
+
+        if (args.Value is bool isChecked)
+        {
+            item.IsSelected = isChecked;
+        }
+
+        Log(item, "CheckboxChanged", $"CheckboxChanged - {(item.IsSelected ? "checked" : "unchecked")}");
+        return Task.CompletedTask;
+    }
+
+    private async Task ExecuteRowClickAsync(ProductItem item, InteractionSource source)
+    {
+        RowCallbackCount++;
+        Log(item, $"{source}RowStart", $"Start - Product {item.Id}");
+
+        await Task.Delay(3000);
+
+        SetSelectedItem(item);
+        Log(item, $"{source}RowComplete", $"Complete - Product {item.Id}");
+
+        LastPropagationStatus = source switch
+        {
+            InteractionSource.Button => $"Button click triggered the row click for Product {item.Id}.",
+            InteractionSource.Checkbox => $"Checkbox click triggered the row click for Product {item.Id}.",
+            InteractionSource.Scenario => $"Rapid click helper queued Product {item.Id}.",
+            _ => $"Direct row click handled for Product {item.Id}."
+        };
+    }
+
+    private void SetSelectedItem(ProductItem item)
+    {
+        foreach (var product in products)
+        {
+            product.IsSelected = false;
+        }
+
+        item.IsSelected = true;
+        SelectedItem = item;
+        LastSelectedTimestamp = DateTime.Now;
+    }
+
+    private void RunSameRowTwiceAsync()
+    {
+        QueueRapidClickScenario("Same row twice quickly", products[9], products[9]);
+    }
+
+    private void RunRowAThenRowBAsync()
+    {
+        QueueRapidClickScenario("Row 1 then row 10", products[0], products[9]);
+    }
+
+    private void RunMultipleRapidRowsAsync()
+    {
+        QueueRapidClickScenario("Row 1, row 10, and row 20", products[0], products[9], products[19]);
+    }
+
+    private void QueueRapidClickScenario(string scenarioName, params ProductItem[] itemsToClick)
+    {
+        CallbackLog.Insert(0, new CallbackEntry(DateTime.Now, "Scenario", scenarioName, scenarioName));
+
+        foreach (var item in itemsToClick)
+        {
+            _ = ExecuteRowClickAsync(item, InteractionSource.Scenario);
+        }
+    }
+
+    private void Log(ProductItem item, string kind, string message)
+    {
+        CallbackLog.Insert(0, new CallbackEntry(DateTime.Now, kind, $"Product {item.Id}", message));
+    }
+
+    private enum InteractionSource
+    {
+        Row,
+        Button,
+        Checkbox,
+        Scenario
+    }
+
+    private sealed record CallbackEntry(DateTime Timestamp, string Kind, string Subject, string Message);
+
+    public sealed class ProductItem
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        public string Category { get; set; } = string.Empty;
+
+        public decimal Price { get; set; }
+
+        public bool IsSelected { get; set; }
+    }
+}

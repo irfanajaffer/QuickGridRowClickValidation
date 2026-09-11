@@ -1,0 +1,38 @@
+# .NET build output
+**/bin/
+**/obj/
+**/publish/
+artifacts/
+
+# Visual Studio and user-specific project files
+.vs/
+*.user
+*.suo
+*.rsuser
+*.userosscache
+*.sln.docstates
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# VS Code workspace settings
+.vscode/
+
+# Test results and code coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.trx
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+~$*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
