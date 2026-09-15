@@ -1,80 +1,78 @@
-# QuickGridRowClickValidation
+# QuickGrid Row Clicks Validation
 
 Validation sample for QuickGrid row click support in Blazor, targeting .NET 11 RC1 and later.
 
-## Sample route
+## Build
 
-Open `/validation-test` in either app.
+Tested locally on the validation machine using the preview SDKs available there.
 
-- Server app: `BlazorServerApp/BlazorServerApp`
-- WebAssembly app: `BlazorWasmApp/BlazorWasmApp`
-- Standalone WASM sample page: `BlazorWasmApp/BlazorWasmApp/BlazorWasmApp.Client/Pages/ValidationTest.razor`
-
-## Run the sample
-
-Server app:
-
-```powershell
-dotnet run --project BlazorServerApp/BlazorServerApp/BlazorServerApp.csproj
+```text
+.NET SDK 11.0.100-rc.1.26425.128 (preview present)
 ```
 
-WebAssembly app:
+The repository does not include a `global.json`; add one to pin an SDK if you require exact reproduction.
+
+## Sample applications
+
+| Project | Render mode | Validation |
+|---|---:|---|
+| `BlazorServerApp/BlazorServerApp` | Interactive Server | Per-row click handling, propagation, and async callback ordering |
+| `BlazorWasmApp/BlazorWasmApp.Client` | Interactive WebAssembly | Same validations as Server, standalone WASM client artifacts |
+
+## How to run
+
+From the repository root, run the chosen sample:
 
 ```powershell
-dotnet run --project BlazorWasmApp/BlazorWasmApp/BlazorWasmApp.csproj
+dotnet run --project .\BlazorServerApp\BlazorServerApp\BlazorServerApp.csproj
+dotnet run --project .\BlazorWasmApp\BlazorWasmApp\BlazorWasmApp.csproj
 ```
 
-## What the sample covers
+Open: `http://localhost:<port>/validation-test` for each app (the port is shown by `dotnet run`).
 
-- Two QuickGrid instances over the same 20-item in-memory data source.
-- Row click handling with async completion, selection tracking, and callback logging.
-- RowClass styling for selected rows.
-- A comparison grid with no `OnRowClick` handler and no clickable row styling.
-- Action button and checkbox interactions inside each row.
--- Rapid click helper buttons for concurrent callback validation. (Removed from samples: use browser automation to reproduce rapid-click scenarios and validate actual event delivery.)
-- A selection details panel with timestamped state.
+## How to verify
 
-## Validate the matrix
-
-1. Open `/validation-test` and confirm the summary panel, log panel, and validation checklist render.
-2. Verify the data set includes row 1, row 10, and row 20.
-3. In Grid 1, click the row content, cell padding, left edge, and right edge for the same row and confirm the row highlights and the selection panel updates.
-4. Click row 1, then row 10, before the first callback completes and confirm the log shows start and complete entries for both rows.
-5. Use browser automation (Playwright/Selenium) or an external click driver to perform rapid clicks on rendered rows, then confirm the log order and final selected item. The sample no longer contains helper buttons that invoke callbacks directly.
-6. Click the Action button inside a row and confirm the button log appears and the row click is also recorded. No `stopPropagation` modifier is configured, so propagation is not suppressed.
-7. Toggle the Checkbox inside a row and confirm the checkbox log appears and the row click is also recorded. No `stopPropagation` modifier is configured, so propagation is not suppressed.
-8. Compare Grid 1 and Grid 2 cursor and hover styling. Grid 1 should show clickable styling; Grid 2 should not.
-9. Confirm the selection details panel shows the selected item ID, name, category, price, and last selected timestamp.
-
-## Deployment checks
-
-- Published output: run `dotnet publish` for the relevant project and verify the page still renders at `/validation-test`.
-- .NET 10 to .NET 11 upgrade: rebuild after updating the target framework and confirm the QuickGrid package reference still resolves.
-- Trimmed publish: publish with trimming enabled and verify the page loads and the logs still update.
-- AOT publish: for the WASM project, publish with AOT enabled and confirm the page still loads in the browser.
-- Hot Reload: use `dotnet watch` on either app and confirm UI edits are reflected without a full restart.
-- Reverse proxy deployment: verify the route works behind the proxy and that the static assets for QuickGrid load correctly.
-- Multi-server deployment: verify the app behaves the same behind multiple instances because the sample only uses in-memory state in the browser session.
-
-## Build details
-
-Run these commands to reproduce the validation builds used during testing:
+Build the projects and confirm successful output:
 
 ```powershell
-dotnet --info
-dotnet build .\BlazorServerApp\BlazorServerApp\BlazorServerApp.csproj --no-restore
-dotnet build .\BlazorWasmApp\BlazorWasmApp.slnx --no-restore
+dotnet build .\BlazorServerApp\BlazorServerApp\BlazorServerApp.csproj --no-restore -nologo -v:minimal
+dotnet build .\BlazorWasmApp\BlazorWasmApp.slnx --no-restore -nologo -v:minimal
 ```
 
-Observed environment and build summary from the validation machine:
+Manual verification checklist (UI):
 
-- `dotnet --info` exposed installed SDKs including `11.0.100-rc.1.26425.128` (preview SDK present).
-- Server build: `BlazorServerApp net11.0` — Build succeeded (no errors, no warnings). An informational preview notice `NETSDK1057` was shown, not a failure.
-- WASM build: `BlazorWasmApp.Client net11.0 browser-wasm` and `BlazorWasmApp net11.0` — Build succeeded (no errors, no warnings). The same informational preview notice (`NETSDK1057`) was shown.
+- Confirm the page renders the summary panel, callback log, and validation checklist.
+- Verify the data set includes row 1, row 10, and row 20.
+- In Grid 1, click the cell content, padding, and row edges and confirm `row-click` is recorded and the selection panel updates.
+- Click buttons and checkboxes inside a row and verify whether the row handler is invoked (propagation is not suppressed by default in this sample).
+- For rapid-click scenarios use browser automation (Playwright/Selenium) to click rendered rows quickly and assert log order and final selection.
 
-If you require absolute reproducibility for downstream validation, include a `global.json` locking the SDK version and attach the raw build logs from the CI run.
+Detailed manual steps and expected outcomes are in the `Evidence/` folder.
 
-## Notes
+## Configuration
 
-- Row click validation requires an interactive host to execute the callbacks. Static SSR can render the page markup, but it will not execute the click handlers until the component is interactive.
-- The sample uses only standard Blazor and QuickGrid APIs.
+Tested configurations:
+
+- Windows host
+- Interactive Server
+- Interactive WebAssembly
+
+Out of scope: Static SSR, MAUI Hybrid, and explicit standalone server-less automation.
+
+## Evidence
+
+- Manual validation steps and expected outcomes: `Evidence/` files
+- Canonical validation report: `Evidence/69130-QuickGrid-Row-Clicks-Validation-Report-Updated.docx`
+- Screenshots and videos: see the `Evidence/` directory
+
+## Current validation status
+
+The overall result is **partially passed**. Key points:
+
+- Core row-click behavior is functional in both Interactive Server and Interactive WebAssembly.
+- Mandatory class contract initially failed (selected rows used `selected-row`); this has been corrected to `selected` in both samples and CSS.
+- Rapid-click helper buttons that directly invoked callbacks were removed from both samples; use browser automation to validate rapid-click behavior via the real event path.
+- Propagation: the samples do not use `@onclick:stopPropagation` and now explicit messaging documents that nested control clicks reach the row handler.
+- Builds: both projects build successfully with no errors and no warnings on the validation machine; an informational preview SDK notice (`NETSDK1057`) was observed during builds.
+
+If you want automated rapid-click verification, add a small Playwright or Selenium harness to click DOM rows and assert callback logs; I can prepare that script and example run commands.
