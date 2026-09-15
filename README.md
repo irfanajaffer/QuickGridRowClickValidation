@@ -56,6 +56,24 @@ dotnet run --project BlazorWasmApp/BlazorWasmApp/BlazorWasmApp.csproj
 - Reverse proxy deployment: verify the route works behind the proxy and that the static assets for QuickGrid load correctly.
 - Multi-server deployment: verify the app behaves the same behind multiple instances because the sample only uses in-memory state in the browser session.
 
+## Build details
+
+Run these commands to reproduce the validation builds used during testing:
+
+```powershell
+dotnet --info
+dotnet build .\BlazorServerApp\BlazorServerApp\BlazorServerApp.csproj --no-restore
+dotnet build .\BlazorWasmApp\BlazorWasmApp.slnx --no-restore
+```
+
+Observed environment and build summary from the validation machine:
+
+- `dotnet --info` exposed installed SDKs including `11.0.100-rc.1.26425.128` (preview SDK present).
+- Server build: `BlazorServerApp net11.0` — Build succeeded (no errors, no warnings). An informational preview notice `NETSDK1057` was shown, not a failure.
+- WASM build: `BlazorWasmApp.Client net11.0 browser-wasm` and `BlazorWasmApp net11.0` — Build succeeded (no errors, no warnings). The same informational preview notice (`NETSDK1057`) was shown.
+
+If you require absolute reproducibility for downstream validation, include a `global.json` locking the SDK version and attach the raw build logs from the CI run.
+
 ## Notes
 
 - Row click validation requires an interactive host to execute the callbacks. Static SSR can render the page markup, but it will not execute the click handlers until the component is interactive.
