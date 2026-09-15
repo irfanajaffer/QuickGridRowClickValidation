@@ -41,8 +41,8 @@ dotnet run --project BlazorWasmApp/BlazorWasmApp/BlazorWasmApp.csproj
 3. In Grid 1, click the row content, cell padding, left edge, and right edge for the same row and confirm the row highlights and the selection panel updates.
 4. Click row 1, then row 10, before the first callback completes and confirm the log shows start and complete entries for both rows.
 5. Use the rapid click helper buttons to queue the same row twice and multiple rows rapidly, then confirm the log order and final selected item.
-6. Click the Action button inside a row and confirm the button log appears and the row click is also recorded.
-7. Toggle the Checkbox inside a row and confirm the checkbox log appears and the row click is also recorded.
+6. Click the Action button inside a row and confirm the button log appears and the row click is also recorded. No `stopPropagation` modifier is configured, so propagation is not suppressed.
+7. Toggle the Checkbox inside a row and confirm the checkbox log appears and the row click is also recorded. No `stopPropagation` modifier is configured, so propagation is not suppressed.
 8. Compare Grid 1 and Grid 2 cursor and hover styling. Grid 1 should show clickable styling; Grid 2 should not.
 9. Confirm the selection details panel shows the selected item ID, name, category, price, and last selected timestamp.
 

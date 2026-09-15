@@ -124,11 +124,11 @@
     margin-bottom: 0;
 }
 
-.clickable-grid ::deep(tr.selected-row) {
+.clickable-grid ::deep(tr.selected) {
     background: rgba(13, 110, 253, 0.12);
 }
 
-.comparison-grid ::deep(tr.selected-row) {
+.comparison-grid ::deep(tr.selected) {
     background: rgba(25, 135, 84, 0.12);
 }
 

@@ -78,10 +78,10 @@
                                 Action
                             </button>
                             <label class="checkbox-control">
-                                <input type="checkbox"
-                                       checked="@item.IsSelected"
-                                       @onclick="() => MarkPendingSource(InteractionSource.Checkbox)"
-                                       @onchange="args => HandleCheckboxChangedAsync(item, args)" />
+                                    <input type="checkbox"
+                                        checked="@item.IsSelected"
+                                        @onclick="() => MarkPendingSource(InteractionSource.Checkbox)"
+                                        @onchange="args => HandleCheckboxChangedAsync(item, args)" />
                                 <span>Checkbox</span>
                             </label>
                         </div>
@@ -157,6 +157,7 @@
 
                 <div class="propagation-summary">
                     <h3>Propagation status</h3>
+                    <p>No <code>stopPropagation</code> modifier is configured; nested control clicks are expected to reach the row handler.</p>
                     <p>@LastPropagationStatus</p>
                 </div>
             </section>
@@ -237,9 +238,9 @@
         new ProductItem { Id = 20, Name = "Product 20", Category = "Sports", Price = 88.40m }
     ];
 
-    private string? GetInteractiveRowClass(ProductItem item) => item.IsSelected ? "selected-row" : null;
+    private string? GetInteractiveRowClass(ProductItem item) => item.IsSelected ? "selected" : null;
 
-    private string? GetComparisonRowClass(ProductItem item) => item.IsSelected ? "selected-row" : null;
+    private string? GetComparisonRowClass(ProductItem item) => item.IsSelected ? "selected" : null;
 
     private async Task HandleRowClickAsync(ProductItem item)
     {
@@ -247,6 +248,11 @@
         PendingSource = null;
 
         await ExecuteRowClickAsync(item, source);
+    }
+
+    private async Task HandleRowClickAsync(ProductItem item, InteractionSource explicitSource)
+    {
+        await ExecuteRowClickAsync(item, explicitSource);
     }
 
     private void MarkPendingSource(InteractionSource source)
@@ -344,7 +350,7 @@
 
         foreach (var item in itemsToClick)
         {
-            _ = ExecuteRowClickAsync(item, InteractionSource.Scenario);
+            _ = HandleRowClickAsync(item, InteractionSource.Scenario);
         }
     }
 
