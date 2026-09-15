@@ -47,17 +47,7 @@
                     </div>
                 </div>
 
-                <div class="rapid-actions">
-                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="RunSameRowTwiceAsync">
-                        Click row 10 twice quickly
-                    </button>
-                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="RunRowAThenRowBAsync">
-                        Click row 1 then row 10
-                    </button>
-                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="RunMultipleRapidRowsAsync">
-                        Click rows 1, 10, and 20 rapidly
-                    </button>
-                </div>
+                <!-- Rapid-click helper buttons removed. Use browser automation or external click drivers to exercise rapid click scenarios so the QuickGrid event path is validated. -->
 
                 <QuickGrid TGridItem="ProductItem"
                            Items="ProductRows"
@@ -329,30 +319,7 @@
         LastSelectedTimestamp = DateTime.Now;
     }
 
-    private void RunSameRowTwiceAsync()
-    {
-        QueueRapidClickScenario("Same row twice quickly", products[9], products[9]);
-    }
-
-    private void RunRowAThenRowBAsync()
-    {
-        QueueRapidClickScenario("Row 1 then row 10", products[0], products[9]);
-    }
-
-    private void RunMultipleRapidRowsAsync()
-    {
-        QueueRapidClickScenario("Row 1, row 10, and row 20", products[0], products[9], products[19]);
-    }
-
-    private void QueueRapidClickScenario(string scenarioName, params ProductItem[] itemsToClick)
-    {
-        CallbackLog.Insert(0, new CallbackEntry(DateTime.Now, "Scenario", scenarioName, scenarioName));
-
-        foreach (var item in itemsToClick)
-        {
-            _ = HandleRowClickAsync(item, InteractionSource.Scenario);
-        }
-    }
+    // Rapid-click helpers removed to ensure rapid-click validation is performed through real DOM events (browser automation).
 
     private void Log(ProductItem item, string kind, string message)
     {

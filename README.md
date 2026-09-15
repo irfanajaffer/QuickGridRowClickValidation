@@ -31,7 +31,7 @@ dotnet run --project BlazorWasmApp/BlazorWasmApp/BlazorWasmApp.csproj
 - RowClass styling for selected rows.
 - A comparison grid with no `OnRowClick` handler and no clickable row styling.
 - Action button and checkbox interactions inside each row.
-- Rapid click helper buttons for concurrent callback validation.
+-- Rapid click helper buttons for concurrent callback validation. (Removed from samples: use browser automation to reproduce rapid-click scenarios and validate actual event delivery.)
 - A selection details panel with timestamped state.
 
 ## Validate the matrix
@@ -40,7 +40,7 @@ dotnet run --project BlazorWasmApp/BlazorWasmApp/BlazorWasmApp.csproj
 2. Verify the data set includes row 1, row 10, and row 20.
 3. In Grid 1, click the row content, cell padding, left edge, and right edge for the same row and confirm the row highlights and the selection panel updates.
 4. Click row 1, then row 10, before the first callback completes and confirm the log shows start and complete entries for both rows.
-5. Use the rapid click helper buttons to queue the same row twice and multiple rows rapidly, then confirm the log order and final selected item.
+5. Use browser automation (Playwright/Selenium) or an external click driver to perform rapid clicks on rendered rows, then confirm the log order and final selected item. The sample no longer contains helper buttons that invoke callbacks directly.
 6. Click the Action button inside a row and confirm the button log appears and the row click is also recorded. No `stopPropagation` modifier is configured, so propagation is not suppressed.
 7. Toggle the Checkbox inside a row and confirm the checkbox log appears and the row click is also recorded. No `stopPropagation` modifier is configured, so propagation is not suppressed.
 8. Compare Grid 1 and Grid 2 cursor and hover styling. Grid 1 should show clickable styling; Grid 2 should not.
