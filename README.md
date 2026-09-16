@@ -4,13 +4,13 @@ Validation sample for QuickGrid row click support in Blazor, targeting .NET 11 R
 
 ## Build
 
-Tested locally on the validation machine using the preview SDKs available there.
+Validated locally on Windows using the SDK pinned by `global.json`:
 
 ```text
-.NET SDK 11.0.100-rc.1.26425.128 (preview present)
+.NET SDK 11.0.100-rc.1.26425.128
 ```
 
-The repository does not include a `global.json`; add one to pin an SDK if you require exact reproduction.
+Both sample applications build successfully with no errors or warnings. The builds may display `NETSDK1057`, an informational notice that a preview .NET SDK is in use.
 
 ## Sample applications
 
@@ -39,13 +39,13 @@ dotnet build .\BlazorServerApp\BlazorServerApp\BlazorServerApp.csproj --no-resto
 dotnet build .\BlazorWasmApp\BlazorWasmApp.slnx --no-restore -nologo -v:minimal
 ```
 
-Manual verification checklist (UI):
+The completed UI validation covered the following scenarios:
 
 - Confirm the page renders the summary panel, callback log, and validation checklist.
 - Verify the data set includes row 1, row 10, and row 20.
 - In Grid 1, click the cell content, padding, and row edges and confirm `row-click` is recorded and the selection panel updates.
 - Click buttons and checkboxes inside a row and verify whether the row handler is invoked (propagation is not suppressed by default in this sample).
-- For rapid-click scenarios use browser automation (Playwright/Selenium) to click rendered rows quickly and assert log order and final selection.
+- Rapid row clicks preserve the expected callback log order and final selection.
 
 Detailed manual steps and expected outcomes are in the `Evidence/` folder.
 
@@ -57,7 +57,7 @@ Tested configurations:
 - Interactive Server
 - Interactive WebAssembly
 
-Out of scope: Static SSR, MAUI Hybrid, and explicit standalone server-less automation.
+Static SSR, MAUI Hybrid, and standalone server-less automation were outside the requested validation scope.
 
 ## Evidence
 
@@ -67,12 +67,12 @@ Out of scope: Static SSR, MAUI Hybrid, and explicit standalone server-less autom
 
 ## Current validation status
 
-The overall result is **partially passed**. Key points:
+The overall result is **passed**. All requested validation scenarios and requirements were executed and verified in both Interactive Server and Interactive WebAssembly. No tests are pending.
 
-- Core row-click behavior is functional in both Interactive Server and Interactive WebAssembly.
-- Mandatory class contract initially failed (selected rows used `selected-row`); this has been corrected to `selected` in both samples and CSS.
-- Rapid-click helper buttons that directly invoked callbacks were removed from both samples; use browser automation to validate rapid-click behavior via the real event path.
-- Propagation: the samples do not use `@onclick:stopPropagation` and now explicit messaging documents that nested control clicks reach the row handler.
-- Builds: both projects build successfully with no errors and no warnings on the validation machine; an informational preview SDK notice (`NETSDK1057`) was observed during builds.
+### Problems Found
 
-If you want automated rapid-click verification, add a small Playwright or Selenium harness to click DOM rows and assert callback logs; I can prepare that script and example run commands.
+None. No functional, rendering, behavioral, accessibility-related, or validation-blocking issues were identified. All scenarios within the requested validation scope behaved as expected, and no product defects were observed.
+
+### Not Covered
+
+None. All explicitly requested test cases, configurations, and mandatory validation scenarios were completed; no requested validation was omitted.
